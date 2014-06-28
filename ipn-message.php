@@ -4,9 +4,15 @@ namespace BreakfastCraft;
 class IPNMessage
 {
 
-    private $ipn;
-    private $sketchyIPN;
-    private $paypalURL = 'ssl://www.sandbox.paypal.com';
+    public $ipn;
+    public $sketchyIPN;
+    public $message_status;
+    public $fsockerr = array(
+        'errno'  => '',
+        'errstr' => ''
+    );
+
+    private $paypalURL = 'www.sandbox.paypal.com';
     private $mode;
     private $filename = 'messages.json';
 
@@ -15,7 +21,7 @@ class IPNMessage
         $this->ipn = $ipn;
         
         if ($mode != 'sandbox') {
-            $this->paypalURL = 'ssl://www.paypal.com';
+            $this->paypalURL = 'www.paypal.com';
         }
 
     }
@@ -30,9 +36,9 @@ class IPNMessage
             $this->sketchyIPN .= "&$key=$value";
         }
 
-        $message_status = $this->postIPN();
+        $this->message_status = $this->postIPN();
 
-        if (strcmp($message_status, "VERIFIED") == 0) {
+        if (strcmp($this->message_status, "VERIFIED") == 0) {
             return true;
         }
         return false;
@@ -43,17 +49,18 @@ class IPNMessage
     {
         // POST validation request to PayPal
         $header = "POST /cgi-bin/webscr HTTP/1.1\r\n";
+        $header .= "Host: " . $this->paypalURL ."\r\n";
         $header .= "Content-Type: application/x-www-form-urlencoded\r\n";
-        $header .= "Content-Length: " . strlen($this->sketchyIPN) . "\r\n\r\n";
+        $header .= "Content-Length: " . strlen($this->sketchyIPN) . "\r\n";
+        $header .= "Connection: Close\r\n\r\n";
 
-        $post = fsockopen($this->paypalURL, 443, $errno, $errstr, 30);
+        $post = fsockopen("ssl://" . $this->paypalURL . "/", 443, $errno, $errstr, 30);
         fputs($post, $header . $this->sketchyIPN);
 
-        while (!feof($post)) {
-            $response = fgets($post, 1024);
-            fclose($post);
-            return $response;
-        }
+        
+        $response = stream_get_contents($post, 1024);
+        return $response;
+        
     }
 
     public function writeMessage()
@@ -67,20 +74,18 @@ class IPNMessage
             'test_ipn'  => $this->ipn['test_ipn']
         );
 
-        echo "Check File";
+        
         //Check for JSON file
         if (file_exists($this->filename)) {
-            echo "Open/Read File";
+            
             //if exists read file into array
             $json = json_decode(file_get_contents($this->filename), true);
             
             //add $message to array
-            echo "Add data to array";
             array_push($json, $message);
 
         } else {
             // create file
-            echo "Create File";
             try {
                 $fh = fopen($this->filename, 'w');
                 $fclose($fh);
@@ -90,12 +95,11 @@ class IPNMessage
             
 
             // create $json array
-            echo "Build Array";
             $json[0] = $message;
         }
 
         // Write $json to file
-        echo "Write File";
+        
         file_put_contents($this->filename, json_encode($json));
 
     }

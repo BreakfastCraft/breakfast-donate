@@ -1,1 +1,1 @@
-[{"amount":"19.95","date":"20:12:59 Jan 13, 2009 PST","status":"Completed","custom":"","rec_email":"gpmac_1231902686_biz@paypal.com","test_ipn":"1"}]
+{"error":"Bad stuff has happend!","ipn":[],"sketchyIPN":"cmd=_notify-validate","response":null}
