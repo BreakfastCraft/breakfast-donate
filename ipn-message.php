@@ -4,15 +4,13 @@ namespace BreakfastCraft;
 class IPNMessage
 {
 
-    //TODO: Switch these back to private after everything works
-
     private $ipn;
     private $sketchyIPN;
     private $message_status;
     private $paypalURL;
     private $mode;
     private $filename = 'messages.json';
-    private $logfile = 'ipn.log';
+    private $logfile = './ipn.log';
 
     public function __construct($ipn, $mode = 'sandbox')
     {
@@ -31,7 +29,7 @@ class IPNMessage
     {
         //Rebuild POST Request and send back to paypal
         $this->sketchyIPN = 'cmd=_notify-validate'; //prepend validation command
-        echo 'in valid 1';
+        
         foreach ($this->ipn as $key => $value) {
             $value = urlencode(stripslashes($value));
             $this->sketchyIPN .= "&$key=$value";
@@ -39,9 +37,10 @@ class IPNMessage
 
         $this->message_status = $this->postIPN();
 
-        if (strcmp($this->message_status, "VERIFIED") == 0) {
+        if ($this->message_status) {
             return true;
         }
+        
         return false;
 
     }
@@ -68,18 +67,32 @@ class IPNMessage
         }
 
         curl_setopt($ch, CURLOPT_CONNNECTTIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, arra('Connection: Close'));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
 
         $response = curl_exec($ch);
+        if (curl_errno($ch) != 0) {
+            if ($this->mode == 'sandbox') {
+                error_log(date('[Y-m-d H:i e') . "Can't connect to PayPal to validate IPN: " . curl_error($ch) . PHP_EOL, 3, $this->logfile);
+            }
+            curl_close($ch);
+            exit;
+        } else {
+            if ($this->mode == 'sandbox') {
+                error_log(date('[Y-m-d H:i e] '). "HTTP request of validation request:". curl_getinfo($ch, CURLINFO_HEADER_OUT) ." for IPN payload: $this->sketchyIPN" . PHP_EOL, 3, LOG_FILE);
+                error_log(date('[Y-m-d H:i e] '). "HTTP response of validation request: $response" . PHP_EOL, 3, LOG_FILE);
 
-        curl_close($ch);
+                list($headers, $response) = explode("\r\n\r\n", $response, 2);
+            }
 
-        if (strcmp($response, "VERIFIED") === 0) {
+            curl_close($ch);
+        }
+        
+
+        if (strcmp($response, "VERIFIED") == 0) {
             return true;
         }
 
         return false;
-
     }
 
     public function writeMessage()
@@ -107,7 +120,7 @@ class IPNMessage
             // create file
             try {
                 $fh = fopen($this->filename, 'w');
-                $fclose($fh);
+                fclose($fh);
             } catch (Exception $e) {
                 echo "Error Writing File: " . $e;
             }
