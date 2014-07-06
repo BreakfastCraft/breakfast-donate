@@ -101,7 +101,7 @@ class IPNMessage
             'amount'    => $this->ipn['mc_gross'],
             'date'      => $this->ipn['payment_date'],
             'status'    => $this->ipn['payment_status'],
-            'custom'    => $this->ipn['custom'],
+            'ign'       => $this->ipn['custom'],
             'rec_email' => $this->ipn['receiver_email'],
             'test_ipn'  => $this->ipn['test_ipn']
         );
