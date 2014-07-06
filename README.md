@@ -4,6 +4,7 @@ A WordPress plugin for handling a crowd-funding type system that obeys Mojang's 
 
 ## Attributions
 * <a href="https://developer.paypal.com/webapps/developer/docs/classic/products/instant-payment-notification/" target="_blank">PayPal IPN implementation</a>
+* <a href="https://minotar.net/" target="_blank">Minecraft User Heads Avatars</a>
 
 ## License
 >*This work is licensed under The Do What The Fuck You Want To Public License (WTFPL).
