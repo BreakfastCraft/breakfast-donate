@@ -48,14 +48,6 @@ class BreakfastDonateWidget extends WP_Widget
                        name="<?php echo $this->get_field_name( 'title' ); ?>"
                        type="text" value="<?php echo esc_attr( $instance['title'] ); ?>"/>
             </p>
-
-            <p>
-                <label for="<?php echo $this->get_field_id( 'donation_reward' ); ?>"><?php _e( 'Donation Reward:' ); ?></label>
-                <input class="widefat" id="<?php echo $this->get_field_id( 'donation_reward' ); ?>"
-                       name="<?php echo $this->get_field_name( 'donation_reward' ); ?>"
-                       type="text" value="<?php echo esc_attr( $instance['donation_reward'] ); ?>"/>
-            </p>
-
              <p>
                 <label for="<?php echo $this->get_field_id( 'donation_url' ); ?>"><?php _e( 'Donation URL:' ); ?></label>
                 <input class="widefat" id="<?php echo $this->get_field_id( 'donation_url' ); ?>"
@@ -68,6 +60,13 @@ class BreakfastDonateWidget extends WP_Widget
                        name="<?php echo $this->get_field_name( 'donation_max' ); ?>"
                        type="text" value="<?php echo esc_attr( $instance['donation_max'] ); ?>"/>
             </p>
+            <p>
+                <label for="<?php echo $this->get_field_id('donation_rewards'); ?>"><?php _e('Donation Rewards:') ?></label>
+                <textarea name="<?php echo $this->get_field_name('donation_rewards'); ?>" rows="10"
+                          id="<?php echo $this->get_field_id('donation_rewards'); ?>" class="large-text"
+                          ><?php echo esc_attr( $instance['donation_rewards'] ); ?></textarea>
+
+            </p>
         <?php
     }
 
@@ -75,20 +74,41 @@ class BreakfastDonateWidget extends WP_Widget
     {
         $instance = $old_instance;
         $instance['title'] = strip_tags($new_instance['title']);
-        $instance['donation_reward'] = strip_tags($new_instance['donation_reward']);
         $instance['donation_url'] = strip_tags($new_instance['donation_url']);
         $instance['donation_max'] = strip_tags($new_instance['donation_max']);
+        $instance['donation_rewards'] = strip_tags($new_instance['donation_rewards']);
         return $instance;
 
+    }
+
+    private function getRewards($donationRewards) {
+        $rewardListing = array();
+        $tierRewards = explode("\n", $donationRewards);
+
+        foreach ($tierRewards as $rawReward) {
+            $tmpReward = explode(",", $rawReward);
+            $reward = array(
+                "goal" => $tmpReward[0],
+                "reward" => $tmpReward[1]
+            );
+
+            array_push($rewardListing, $reward);
+        }
+
+        return $rewardListing;
     }
 
     public function widget($args, $instance)
     {
         extract($args);
         $title = apply_filters('widget_title', $instance['title']);
-        $donationReward = $instance['donation_reward'];
         $donationURL = $instance['donation_url'];
         $donationMax = $instance['donation_max'];
+
+        $donationRewards = $this->getRewards($instance['donation_rewards']);
+
+
+
 
         $donators = array();
         $currentValue = 0;
@@ -106,6 +126,16 @@ class BreakfastDonateWidget extends WP_Widget
         }
 
         $percentReached = round(($currentValue / $donationMax) * 100);
+
+        foreach ($donationRewards as $tier) {
+            
+            if ($percentReached < $tier['goal']) {
+                $donationReward = $tier['reward'];
+                break;
+            } else {
+                $donationReward = "<span class=\"label label-success\">Funding Goal Complete!!</span>";
+            }
+        }
 
         ?>
             <section class="breakfast-donate-widget">
@@ -131,7 +161,11 @@ class BreakfastDonateWidget extends WP_Widget
                         </div>
                     </div>
                 </div>
-                
+                <div class="row">
+                    <div class="col-sm-12">
+                        <pre><?php print_r($donationRewards); ?></pre>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-sm-12">
                         <!-- 5 Most Recemt Donors -->
