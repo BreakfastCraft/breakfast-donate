@@ -163,11 +163,6 @@ class BreakfastDonateWidget extends WP_Widget
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        <pre><?php print_r($donationRewards); ?></pre>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-12">
                         <!-- 5 Most Recemt Donors -->
                         <div class="panel panel-default">
                             <div class="panel-heading">
