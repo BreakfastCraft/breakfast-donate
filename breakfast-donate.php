@@ -13,6 +13,8 @@ class BreakfastDonateWidget extends WP_Widget
     private $messages;
     private $donators;
     private $filename;
+    private $config;
+    private $configFile;
     private $error;
 
     public function __construct()
@@ -23,14 +25,24 @@ class BreakfastDonateWidget extends WP_Widget
             array('description' => __('A donation tracking widget', 'text_domain'))
         );
 
-        $this->filename = __DIR__ . '/messages.json';
+        $this->configFile = __DIR__ . '/config.json';
+        if (file_exists($this->configFile)) {
+            if ($json = json_decode(file_get_contents($this->configFile))) {
+                $this->config = $json;
+            } else {
+                $this->error = 'Failed - Config Read' . $this->configFile;
+            }
+        }
+
+
+        $this->filename = __DIR__ . '/' . $this->config->message_file;
         
         if (file_exists($this->filename)) {
             
             if ($json = json_decode(file_get_contents($this->filename), true)) {
                $this->messages = $json; 
             } else {
-                $this->error = 'Failed - File Read' . $this->filename;
+                $this->error = 'Failed - Message File Read' . $this->filename;
             }
         
         } else {
@@ -61,6 +73,12 @@ class BreakfastDonateWidget extends WP_Widget
                        type="text" value="<?php echo esc_attr( $instance['donation_max'] ); ?>"/>
             </p>
             <p>
+                <label for="<?php echo $this->get_field_id( 'rec_email' ); ?>"><?php _e( 'Paypal E-mail:' ); ?></label>
+                <input class="widefat" id="<?php echo $this->get_field_id( 'rec_email' ); ?>"
+                       name="<?php echo $this->get_field_name( 'rec_email' ); ?>"
+                       type="text" value="<?php echo esc_attr( $instance['rec_email'] ); ?>"/>
+            </p>
+            <p>
                 <label for="<?php echo $this->get_field_id('donation_rewards'); ?>"><?php _e('Donation Rewards:') ?></label>
                 <textarea name="<?php echo $this->get_field_name('donation_rewards'); ?>" rows="10"
                           id="<?php echo $this->get_field_id('donation_rewards'); ?>" class="large-text"
@@ -76,12 +94,20 @@ class BreakfastDonateWidget extends WP_Widget
         $instance['title'] = strip_tags($new_instance['title']);
         $instance['donation_url'] = strip_tags($new_instance['donation_url']);
         $instance['donation_max'] = strip_tags($new_instance['donation_max']);
+        $instance['rec_email'] = strip_tags($new_instance['rec_email']);
         $instance['donation_rewards'] = strip_tags($new_instance['donation_rewards']);
+
+        $this->config->correct_sender = $instance['rec_email'];
+        print_r($config);
+        $this->writeConfig();
+       
+
         return $instance;
 
     }
 
-    private function getRewards($donationRewards) {
+    private function getRewards($donationRewards) 
+    {
         $rewardListing = array();
         $tierRewards = explode("\n", $donationRewards);
 
@@ -96,6 +122,15 @@ class BreakfastDonateWidget extends WP_Widget
         }
 
         return $rewardListing;
+    }
+
+    private function writeConfig() 
+    {
+        if (file_exists($this->configFile)) {
+            
+            file_put_contents($this->configFile, json_encode($this->config));
+            
+        }
     }
 
     public function widget($args, $instance)

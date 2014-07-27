@@ -4,25 +4,33 @@ namespace BreakfastCraft;
 class IPNMessage
 {
 
-    private $ipn;
-    private $sketchyIPN;
-    private $message_status;
-    private $paypalURL;
-    private $mode;
-    private $filename = 'messages.json';
-    private $logfile = './ipn.log';
+    public $ipn;
+    public $sketchyIPN;
+    public $message_status;
+    public $paypalURL;
+    
+    public $correct_sender;
+    public $mode;
+    public $filename;
+    public $logfile;
+    public $ipnError;
 
-    public function __construct($ipn, $mode = 'sandbox')
+    public function __construct($ipn)
     {
         $this->ipn = $ipn;
+
+        //read config file
+        $config = json_decode(file_get_contents('config.json'));
+        $this->correct_sender = $config->correct_sender;
+        $this->mode = $config->mode;
+        $this->filename = $config->message_file;
+        $this->logfile = $config->errorlog;
         
-        if ($mode != 'sandbox') {
+        if ($this->mode != 'sandbox') {
             $this->paypalURL = "https://www.paypal.com/cgi-bin/webscr";
         } else {
             $this->paypalURL = "https://www.sandbox.paypal.com/cgi-bin/webscr";
         }
-
-        $this->mode = $mode;
     }
 
     public function isIPNValid()
@@ -36,6 +44,7 @@ class IPNMessage
         }
 
         $this->message_status = $this->postIPN();
+
 
         if ($this->message_status) {
             return true;
@@ -61,29 +70,22 @@ class IPNMessage
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
 
-        if ($this->mode == 'sandbox') {
-            curl_setopt($ch, CURLOPT_HEADER, 1);
-            curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-        }
+        // if ($this->mode == 'sandbox') {
+             curl_setopt($ch, CURLOPT_HEADER, 1);
+             curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+        // }
 
         curl_setopt($ch, CURLOPT_CONNNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
 
         $response = curl_exec($ch);
         if (curl_errno($ch) != 0) {
-            if ($this->mode == 'sandbox') {
-                error_log(date('[Y-m-d H:i e') . "Can't connect to PayPal to validate IPN: " . curl_error($ch) . PHP_EOL, 3, $this->logfile);
-            }
+            $this->ipnError = "Can't connect to PayPal to validate IPN: " . curl_error($ch);
             curl_close($ch);
             exit;
         } else {
-            if ($this->mode == 'sandbox') {
-                error_log(date('[Y-m-d H:i e] '). "HTTP request of validation request:". curl_getinfo($ch, CURLINFO_HEADER_OUT) ." for IPN payload: $this->sketchyIPN" . PHP_EOL, 3, LOG_FILE);
-                error_log(date('[Y-m-d H:i e] '). "HTTP response of validation request: $response" . PHP_EOL, 3, LOG_FILE);
 
-                list($headers, $response) = explode("\r\n\r\n", $response, 2);
-            }
-
+            list($headers, $response) = explode("\r\n\r\n", $response, 2);
             curl_close($ch);
         }
         
@@ -92,6 +94,7 @@ class IPNMessage
             return true;
         }
 
+        $this->ipnError = "IPNMessage Not verified. Response: " . $response;
         return false;
     }
 
@@ -113,8 +116,12 @@ class IPNMessage
             //if exists read file into array
             $json = json_decode(file_get_contents($this->filename), true);
             
-            //add $message to array
-            array_push($json, $message);
+            
+            // Verify that ipn is from the correct sender
+            if ($message['rec_email'] == $this->correct_sender) {
+                //add $message to array
+                array_push($json, $message);
+            }
 
         } else {
             // create file

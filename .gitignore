@@ -1,3 +1,5 @@
 paypal/
 vendor/
 ipn.log
+config.json
+messages.json
