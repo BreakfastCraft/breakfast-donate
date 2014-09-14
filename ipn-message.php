@@ -117,8 +117,8 @@ class IPNMessage
             $json = json_decode(file_get_contents($this->filename), true);
             
             
-            // Verify that ipn is from the correct sender
-            if ($message['rec_email'] == $this->correct_sender) {
+            // Verify that ipn is from the correct sender and that the payment is complete
+            if ($message['rec_email'] == $this->correct_sender && $message['status'] == 'complete') {
                 //add $message to array
                 array_push($json, $message);
             }
