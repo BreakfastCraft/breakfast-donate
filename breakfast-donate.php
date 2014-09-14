@@ -226,8 +226,11 @@ class BreakfastDonateWidget extends WP_Widget
                                         }
                                     ?>
                                 </ul>
+<<<<<<< HEAD
                                 <?php } else { ?> 
                                     <p>There are no donors at the moment :/</p> 
+=======
+>>>>>>> 02c428422ae25dd506555432cb49bb9602a168e9
                                 <?php } ?>
                             </div>
                         </div>
