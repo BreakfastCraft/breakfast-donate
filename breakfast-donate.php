@@ -204,6 +204,10 @@ class BreakfastDonateWidget extends WP_Widget
                                 <h3 class="panel-title">Recent Donors</h3>
                             </div>    
                             <div class="panel-body">
+                                <?php 
+                                    $donatorCount = count($donators);
+                                    if (is_int($donators) && $donatorCount > 0 ) {
+                                ?>
                                 <ul class="list-group">
                                     <?php 
                                         echo (isset($this->error)) ? $this->error : '';
@@ -222,6 +226,9 @@ class BreakfastDonateWidget extends WP_Widget
                                         }
                                     ?>
                                 </ul>
+                                <?php } else { ?> 
+                                    <p>There are no donors at the moment :/</p> 
+                                <?php } ?>
                             </div>
                         </div>
                     </div>
