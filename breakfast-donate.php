@@ -179,7 +179,7 @@ class BreakfastDonateWidget extends WP_Widget
                         <!-- Progress Bar -->
                         <h3><?php echo $title ?></h3>
                         <div class="donation-goals">
-                            <p>Donation Reward: <?php echo $donationReward ?></p>
+                            <p>Donation Reward: <span class="label label-info"><?php echo $donationReward ?></span></p>
                             <p class="well well-sm">
                                 <span>Current: $<?php echo $currentValue ?></span> 
                                 <span class="pull-right">Goal: $<?php echo $donationMax ?></span>
@@ -215,7 +215,11 @@ class BreakfastDonateWidget extends WP_Widget
                                     ?>
                                     <?php foreach (array_reverse($donators) as $donator ) { ?>
                                         <li class="list-group-item">
-                                            <img src="https://minotar.net/avatar/<?php echo $donator['ign'] ?>/16">&nbsp;&nbsp;<strong><?php echo $donator['ign'] ?></strong>
+                                            <?php if(is_string($donator['ign']) && $donator['ign'] != '') { ?>
+                                                <img src="https://minotar.net/avatar/<?php echo $donator['ign'] ?>/16">&nbsp;&nbsp;<strong><?php echo $donator['ign'] ?></strong>
+                                            <?php } else { ?>
+                                                <span>Anonymous</span>
+                                            <?php } ?>
                                             <span class="pull-right">$ <?php echo $donator['amount'] ?></span>
                                         </li>
                                     <?php
